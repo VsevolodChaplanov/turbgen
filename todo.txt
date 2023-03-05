@@ -1,0 +1,6 @@
+- Check conditions for positive definite covariance matrix.
+  Sometimes eigen values are negative.
+- Save state.
+- Add limit to number of values in a row
+- Sequential simulations
+- decrease memory consumption in matrix assembly

@@ -1,4 +1,4 @@
-Build stochastic velocity field by the given turbulence energy spectrum
+Builds stochastic velocity field by the given turbulence energy spectrum
 using stochastic gaussian modeling with incomplete eigen decomposition.
 
 gaussian1 - computes independent Vx field.

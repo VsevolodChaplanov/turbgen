@@ -81,7 +81,7 @@ void gaussian3(){
 	size_t N1 = 21;
 	double L1 = 10;
 	// -- number of eigen vectors with largest eigen values that will be taken into account
-	size_t eigen_cut = 1000;
+	size_t eigen_cut = 200;
 	// -- set variance to zero if it is lower than max_variance * variance_cut
 	double variance_cut = 0.05;
 	// -- generate n_tries resulting fields

@@ -1,61 +1,54 @@
 #include "stochastic_gaussian.hpp"
 #include <vector>
+#include <set>
 
 namespace{
 
 class TmpSpMat{
 public:
-	TmpSpMat(size_t n, double threshold): _data(n), _n(n), _threshold(threshold){}
+	TmpSpMat(size_t n, double threshold): _n(n), _threshold(threshold){}
 
-	void set_value(size_t irow, size_t icol, double value){
+	void set_value(int irow, int icol, double value){
 		if (std::abs(value) > _threshold){
 			if (icol < irow) std::swap(irow, icol);
-			_data[irow][icol] = value;
+			if (icol == irow){
+				_rows.push_back(irow);
+				_cols.push_back(irow);
+				_values.push_back(value);
+			} else {
+				_rows.push_back(irow);
+				_cols.push_back(icol);
+				_rows.push_back(icol);
+				_cols.push_back(irow);
+				_values.push_back(value);
+				_values.push_back(value);
+			}
 		}
 	}
-	arma::SpMat<double> assemble_sym() const{
-		size_t ndata = 0;
-		for (size_t irow = 0; irow < _n; ++irow){
-			bool has_diag = _data[irow].find(irow) != _data[irow].end();
-			ndata += 2*_data[irow].size();
-			if (has_diag) ndata -= 1;
-		};
-
-		arma::umat locations(2, ndata);
-		arma::Col<double> values(ndata);
-
-		size_t k = 0;
-		for (size_t irow = 0; irow < _n; ++irow){
-			for (auto& mapit: _data[irow]){
-				size_t icol = mapit.first;
-				double value = mapit.second;
-				if (icol == irow){
-					locations(0, k) = irow;
-					locations(1, k) = irow;
-					values(k) = value;
-					k += 1;
-				} else {
-					locations(0, k) = irow;
-					locations(1, k) = icol;
-					values(k) = value;
-					locations(0, k+1) = icol;
-					locations(1, k+1) = irow;
-					values(k+1) = value;
-					k += 2;
-				}
-			}
-		};
-
-		if (k != ndata){
-			throw std::runtime_error("Error in matrix assembling");
+	arma::SpMat<double> assemble_sym(){
+		arma::umat locations(2, _rows.size());
+		for (size_t i=0; i<_rows.size(); ++i){
+			locations(0, i) = _rows[i];
+			locations(1, i) = _cols[i];
 		}
+		_rows.clear();
+		_cols.clear();
 
-		return arma::SpMat<double>(locations, values);
+		arma::Col<double> values(_values.size());
+		for (size_t i=0; i<_values.size(); ++i){
+			values(i) = _values[i];
+		}
+		_values.clear();
+
+		return arma::SpMat<double>(std::move(locations), std::move(values));
 	}
 private:
-	std::vector<std::map<size_t, double>> _data;
+	std::vector<int> _rows, _cols;
+	std::vector<double> _values;
 	const size_t _n;
 	const double _threshold;
+
+	size_t _n_data = 0;
 };
 
 }
@@ -217,6 +210,37 @@ void StochasticGaussian3::initialize(const IVarFun3& varfun){
 
 	std::cout << "Calculating eigen vectors" << std::endl;
 	arma::eigs_sym(eigval, eigvec, cov, _params.eigen_cut);
+	
+	// check for positive values only
+	std::set<size_t> not_needed;
+	for (size_t i=0; i<eigval.n_elem; ++i){
+		if (eigval(i) < 0){
+			not_needed.insert(i);
+		}
+	}
+	if (not_needed.size() > 0){
+		std::cout << "WARNING: " << not_needed.size() << " eigen values are negative: ";
+		for (size_t i: not_needed) std::cout << eigval(i) << " ";
+		std::cout << std::endl;
+
+		arma::Mat<double> eigvec2 = arma::Mat<double>(eigvec.n_rows, eigvec.n_cols - not_needed.size());
+		arma::Col<double> eigval2 = arma::Col<double>(eigvec.n_cols - not_needed.size());
+
+		int kcol = 0;
+		for (size_t icol=0; icol < eigvec.n_cols; ++icol){
+			if (not_needed.find(icol) != not_needed.end()){
+				continue;
+			}
+			eigval2(kcol) = eigval(icol);
+			for (size_t irow=0; irow < eigvec.n_rows; ++irow){
+				eigvec2(irow, kcol) = eigvec(irow, icol);
+			}
+			++kcol;
+		}
+		std::swap(eigval2, eigval);
+		std::swap(eigvec2, eigvec);
+	}
+
 	std::cout << eigval.n_elem << " eigen vectors calculated." << std::endl;
 	std::cout << "Eigen values range = [" << eigval(0) << ", " << eigval(eigval.n_elem-1) << "]" << std::endl;
 }
