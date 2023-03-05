@@ -4,3 +4,4 @@
 - Add limit to number of values in a row
 - Sequential simulations
 - decrease memory consumption in matrix assembly
+- Model only Vx, Vy. Compute Vz from div v = 0 equation.
