@@ -49,23 +49,23 @@ PhysicalSpace FourierSpace::physical_space() const{
 	return PhysicalSpace(N, Lx);
 };
 
-std::array<double, 3> Space::point(size_t i, size_t j, size_t k) const{
+point_t Space::point(size_t i, size_t j, size_t k) const{
 	return {coo[i], coo[j], coo[k]};
 }
 
-std::array<double, 3> Space::point(size_t ind) const{
+point_t Space::point(size_t ind) const{
 	std::array<size_t, 3> ind3 = tri_index(ind);
 	return {coo[ind3[0]], coo[ind3[1]], coo[ind3[2]]};
 }
 
-bool Space::point_within(const std::array<double, 3>& p) const{
+bool Space::point_within(const point_t& p) const{
 	if (p[0] < coo[0] || p[0] > coo.back()) return false;
 	if (p[1] < coo[0] || p[1] > coo.back()) return false;
 	if (p[2] < coo[0] || p[2] > coo.back()) return false;
 	return true;
 }
 
-double Space::interpolate_at(const std::array<double, 3>& p, const std::vector<double>& f) const{
+double Space::interpolate_at(const point_t& p, const std::vector<double>& f) const{
 	std::array<size_t, 8> indices;
 	std::array<double, 8> bases;
 	interpolation_polynom(p, indices, bases);
@@ -73,7 +73,7 @@ double Space::interpolate_at(const std::array<double, 3>& p, const std::vector<d
 	return use_interpolation_polynom(indices, bases, f);
 }
 
-std::array<double, 6> Space::interpolate_at6(const std::array<double, 3>& p,
+std::array<double, 6> Space::interpolate_at6(const point_t& p,
 		const std::vector<double>& f1,
 		const std::vector<double>& f2,
 		const std::vector<double>& f3,
@@ -105,7 +105,7 @@ double Space::use_interpolation_polynom(const std::array<size_t, 8>& indices, co
 	       + v[indices[7]] * bases[7];
 }
 
-void Space::interpolation_polynom(const std::array<double, 3>& p, std::array<size_t, 8>& indices, std::array<double, 8>& bases) const{
+void Space::interpolation_polynom(const point_t& p, std::array<size_t, 8>& indices, std::array<double, 8>& bases) const{
 	double kx = (p[0] - coo[0])/h;
 	double ky = (p[1] - coo[0])/h;
 	double kz = (p[2] - coo[0])/h;

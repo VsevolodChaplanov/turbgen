@@ -6,20 +6,22 @@
 #include <string>
 #include <fstream>
 
+using point_t = std::array<double, 3>;
+
 // 3d symmetric cube [-L/2, L/2]
 // divided by N segments in each direction
 struct Space{
 	Space(size_t N, double L);
 
-	std::array<double, 3> point(size_t i, size_t j, size_t k) const;
-	std::array<double, 3> point(size_t ind) const;
+	point_t point(size_t i, size_t j, size_t k) const;
+	point_t point(size_t ind) const;
 
 	size_t lin_index(size_t i, size_t j, size_t k) const;
 	std::array<size_t, 3> tri_index(size_t ind) const;
 
-	bool point_within(const std::array<double, 3>& p) const;
-	double interpolate_at(const std::array<double, 3>& p, const std::vector<double>& f) const;
-	std::array<double, 6> interpolate_at6(const std::array<double, 3>& p,
+	bool point_within(const point_t& p) const;
+	double interpolate_at(const point_t& p, const std::vector<double>& f) const;
+	std::array<double, 6> interpolate_at6(const point_t& p,
 			const std::vector<double>& f1,
 			const std::vector<double>& f2,
 			const std::vector<double>& f3,
@@ -72,7 +74,7 @@ struct Space{
 private:
 	void tovtk_init(std::ostream& fs, int datadim=1) const;
 	double use_interpolation_polynom(const std::array<size_t, 8>& indices, const std::array<double, 8>& bases, const std::vector<double>& v) const;
-	void interpolation_polynom(const std::array<double, 3>& p, std::array<size_t, 8>& indices, std::array<double, 8>& bases) const;
+	void interpolation_polynom(const point_t& p, std::array<size_t, 8>& indices, std::array<double, 8>& bases) const;
 };
 
 struct PhisicalSpace;

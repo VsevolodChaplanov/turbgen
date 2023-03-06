@@ -7,7 +7,6 @@
 
 class KrigingInterpolator{
 public:
-	using point_t = std::array<double, 3>;
 	using varfun_t = std::function<double(const point_t&)>;
 
 	KrigingInterpolator(

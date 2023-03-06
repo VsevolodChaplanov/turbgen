@@ -10,8 +10,6 @@
 
 class StochasticGaussian1{
 public:
-	using point_t = std::array<double, 3>;
-
 	struct Params{
 		size_t eigen_cut = 1000;
 		double variance_cut = 0.05;
@@ -40,8 +38,6 @@ private:
 
 class StochasticGaussian3{
 public:
-	using point_t = std::array<double, 3>;
-
 	struct Params{
 		size_t eigen_cut = 1000;
 		double variance_cut = 0.05;

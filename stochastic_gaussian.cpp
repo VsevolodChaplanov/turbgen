@@ -63,7 +63,7 @@ arma::SpMat<double> build_covariance_matrix(const IVarFun1& varfun, double cut_s
 	double threshold = cut_share * varfun.max_value();
 
 	for (int irow=0; irow<outspace.N3; ++irow){
-		std::array<double, 3> p0 = outspace.point(irow); 
+		point_t p0 = outspace.point(irow); 
 
 		// diagonal
 		double c0 = varfun.variance0();
@@ -71,7 +71,7 @@ arma::SpMat<double> build_covariance_matrix(const IVarFun1& varfun, double cut_s
 
 		// non-diagonal
 		for (int icol=irow+1; icol<outspace.N3; ++icol){
-			std::array<double, 3> p1 = outspace.point(icol); 
+			point_t p1 = outspace.point(icol); 
 			p1[0] -= p0[0];
 			p1[1] -= p0[1];
 			p1[2] -= p0[2];
@@ -140,7 +140,7 @@ arma::SpMat<double> build_covariance_matrix(const IVarFun3& varfun, double cut_s
 	auto ez = [n](size_t i)->size_t{ return i + 2*n; };
 
 	for (int irow=0; irow<outspace.N3; ++irow){
-		std::array<double, 3> p0 = outspace.point(irow); 
+		point_t p0 = outspace.point(irow); 
 
 		// diagonal
 		std::array<double, 6> c0 = varfun.variance0();
@@ -153,7 +153,7 @@ arma::SpMat<double> build_covariance_matrix(const IVarFun3& varfun, double cut_s
 
 		// non-diagonal
 		for (int icol=irow+1; icol<outspace.N3; ++icol){
-			std::array<double, 3> p1 = outspace.point(icol); 
+			point_t p1 = outspace.point(icol); 
 			p1[0] -= p0[0];
 			p1[1] -= p0[1];
 			p1[2] -= p0[2];

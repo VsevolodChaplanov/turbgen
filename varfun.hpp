@@ -7,8 +7,6 @@ class IVarFun1{
 public:
 	virtual ~IVarFun1() = default;
 
-	using point_t = std::array<double, 3>;
-
 	virtual double variance(const point_t& direction) const = 0;
 	virtual double variance0() const = 0;
 	virtual double max_value() const = 0;
@@ -16,8 +14,6 @@ public:
 
 class GridVariance1: public IVarFun1{
 public:
-	using IVarFun1::point_t;
-
 	GridVariance1(PhysicalSpace space, std::vector<double>&& val);
 
 	double variance(const point_t& direction) const override;
@@ -34,8 +30,6 @@ class IVarFun3{
 public:
 	virtual ~IVarFun3() = default;
 
-	using point_t = std::array<double, 3>;
-
 	virtual std::array<double, 6> variance(const point_t& direction) const = 0;
 	virtual std::array<double, 6> variance0() const = 0;
 	virtual double max_value() const = 0;
@@ -44,8 +38,6 @@ public:
 
 class GridVariance3: public IVarFun3{
 public:
-	using IVarFun3::point_t;
-
 	GridVariance3(PhysicalSpace space,
 			std::vector<double>&& val11,
 			std::vector<double>&& val12,
