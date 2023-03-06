@@ -21,7 +21,7 @@ public:
 		Params params);
 
 	const PhysicalSpace& space() const;
-	arma::Col<double> generate(size_t seed) const;
+	std::vector<double> generate(size_t seed) const;
 
 	void save_state(std::string fn) const;
 	static StochasticGaussian1 load_state(std::string fn);

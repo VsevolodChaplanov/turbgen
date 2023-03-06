@@ -107,7 +107,7 @@ void StochasticGaussian1::initialize(const IVarFun1& varfun){
 	std::cout << "Eigen values range = [" << eigval(0) << ", " << eigval(eigval.n_elem-1) << "]" << std::endl;
 }
 
-arma::Col<double> StochasticGaussian1::generate(size_t seed) const{
+std::vector<double> StochasticGaussian1::generate(size_t seed) const{
 	std::mt19937_64 generator;
 	generator.seed(seed);
 	size_t n_vals = eigval.n_elem;
@@ -117,7 +117,8 @@ arma::Col<double> StochasticGaussian1::generate(size_t seed) const{
 	for (size_t i=0; i<n_vals; ++i){
 		random_normals(i) = ndist(generator) * std::sqrt(eigval(i));
 	}
-	return eigvec * random_normals;
+	arma::Col<double> ret = eigvec * random_normals;
+	return std::vector<double>(ret.begin(), ret.end());
 }
 
 std::string StochasticGaussian1::dstr() const{
