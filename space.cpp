@@ -73,6 +73,20 @@ double Space::interpolate_at(const point_t& p, const std::vector<double>& f) con
 	return use_interpolation_polynom(indices, bases, f);
 }
 
+std::array<double, 3> Space::interpolate_at3(const point_t& p,
+		const std::vector<double>& f1,
+		const std::vector<double>& f2,
+		const std::vector<double>& f3) const{
+
+	std::array<size_t, 8> indices;
+	std::array<double, 8> bases;
+	interpolation_polynom(p, indices, bases);
+
+	return {use_interpolation_polynom(indices, bases, f1),
+	        use_interpolation_polynom(indices, bases, f2),
+	        use_interpolation_polynom(indices, bases, f3)};
+}
+
 std::array<double, 6> Space::interpolate_at6(const point_t& p,
 		const std::vector<double>& f1,
 		const std::vector<double>& f2,

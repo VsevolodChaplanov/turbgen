@@ -10,6 +10,7 @@ size_t find_center_index(const PhysicalSpace& space){
 
 }
 
+// ================================ 1
 GridVariance1::GridVariance1(PhysicalSpace space, std::vector<double>&& val):
 	_space(space),
 	_value(std::move(val)),
@@ -32,6 +33,37 @@ double GridVariance1::max_value() const{
 	return std::max(std::abs(vmax), std::abs(vmin));
 }
 
+// ================================== 2
+GridVariance2::GridVariance2(PhysicalSpace space,
+		std::vector<double>&& val11,
+		std::vector<double>&& val12,
+		std::vector<double>&& val22):
+	_space(space),
+	_value11(std::move(val11)),
+	_value12(std::move(val12)),
+	_value22(std::move(val22)),
+	_center({_value11[find_center_index(space)],
+	         _value12[find_center_index(space)],
+	         _value22[find_center_index(space)]})
+{}
+
+std::array<double, 3> GridVariance2::variance(const point_t& direction) const{
+	if (_space.point_within(direction)){
+		return _space.interpolate_at3(direction, _value11, _value12, _value22);
+	} else {
+		return {0, 0, 0};
+	}
+}
+
+std::array<double, 3> GridVariance2::variance0() const{
+	return _center;
+}
+
+double GridVariance2::max_value() const{
+	return *std::max_element(_center.begin(), _center.end());
+}
+
+// ================================== 3
 GridVariance3::GridVariance3(PhysicalSpace space,
 		std::vector<double>&& val11,
 		std::vector<double>&& val12,

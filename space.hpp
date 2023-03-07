@@ -21,6 +21,10 @@ struct Space{
 
 	bool point_within(const point_t& p) const;
 	double interpolate_at(const point_t& p, const std::vector<double>& f) const;
+	std::array<double, 3> interpolate_at3(const point_t& p,
+			const std::vector<double>& f1,
+			const std::vector<double>& f2,
+			const std::vector<double>& f3) const;
 	std::array<double, 6> interpolate_at6(const point_t& p,
 			const std::vector<double>& f1,
 			const std::vector<double>& f2,
@@ -47,6 +51,25 @@ struct Space{
 		tovtk_init(fs);
 		for (DataIter it=begin; it != end; ++it){
 			fs << *it << std::endl;
+		}
+	}
+
+	void tovtk(std::string fn,
+			const std::vector<double>& u,
+			const std::vector<double>& v) const{
+		return tovtk(fn, u.begin(), u.end(), v.begin(), v.end());
+	}
+
+	template<typename DataIter>
+	void tovtk(std::string fn,
+			DataIter ubegin, DataIter uend,
+			DataIter vbegin, DataIter vend) const{
+		std::ofstream fs(fn);
+		tovtk_init(fs, 2);
+		DataIter uit = ubegin;
+		DataIter vit = vbegin;
+		while (uit != uend && vit != vend){
+			fs << *uit++ << " " << *vit++ << std::endl;
 		}
 	}
 

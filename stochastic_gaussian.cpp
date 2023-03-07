@@ -84,6 +84,54 @@ arma::SpMat<double> build_covariance_matrix(const IVarFun<1>& varfun, double cut
 	return ret;
 }
 
+// ================================= 2
+
+arma::SpMat<double> build_covariance_matrix(const IVarFun<2>& varfun, double cut_share, PhysicalSpace outspace){
+	double threshold = cut_share * varfun.max_value();
+	TmpSpMat tmp(2*outspace.N3, threshold);
+
+	size_t n = outspace.N3;
+	auto ex = [n](size_t i)->size_t{ return i; };
+	auto ey = [n](size_t i)->size_t{ return i + n; };
+
+	for (int irow=0; irow<outspace.N3; ++irow){
+		point_t p0 = outspace.point(irow); 
+
+		// diagonal
+		std::array<double, 3> c0 = varfun.variance0();
+		tmp.set_value(ex(irow), ex(irow), c0[0]);
+		tmp.set_value(ex(irow), ey(irow), c0[1]);
+		tmp.set_value(ey(irow), ey(irow), c0[2]);
+
+		// non-diagonal
+		for (int icol=irow+1; icol<outspace.N3; ++icol){
+			point_t p1 = outspace.point(icol); 
+			p1[0] -= p0[0];
+			p1[1] -= p0[1];
+			p1[2] -= p0[2];
+
+			std::array<double, 3> c = varfun.variance(p1);
+			// xx
+			if (std::abs(c[0]) > threshold){
+				tmp.set_value(ex(irow), ex(icol), c[0]);
+			}
+			// xy
+			if (std::abs(c[1]) > threshold){
+				tmp.set_value(ex(irow), ey(icol), c[1]);
+				tmp.set_value(ex(icol), ey(irow), c[1]);
+			}
+			// yy
+			if (std::abs(c[3]) > threshold){
+				tmp.set_value(ey(irow), ey(icol), c[3]);
+			}
+		}
+	}
+	arma::SpMat<double> ret = tmp.assemble_sym();
+
+	std::cout << ret.n_nonzero << " non zero entries in the covariance matrix from " << ret.n_elem << std::endl;
+	return ret;
+}
+
 // ================================= 3
 
 arma::SpMat<double> build_covariance_matrix(const IVarFun<3>& varfun, double cut_share, PhysicalSpace outspace){
@@ -215,4 +263,5 @@ void StochasticGaussian<Dim>::initialize(const IVarFun<Dim>& varfun){
 }
 
 template class StochasticGaussian<1>;
+template class StochasticGaussian<2>;
 template class StochasticGaussian<3>;

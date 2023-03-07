@@ -72,6 +72,71 @@ void gaussian1(){
 	std::cout << "DONE" << std::endl;
 }
 
+void gaussian2(){
+	// ==== PARAMETERS
+	// -- 1d partition and linear size of the discretized variance scalar field
+	size_t N = 51;
+	double L = 20;
+	// -- 1d partition and linear size of the resulting velocity vector field
+	size_t N1 = 21;
+	double L1 = 10;
+	// -- number of eigen vectors with largest eigen values that will be taken into account
+	size_t eigen_cut = 200;
+	// -- set variance to zero if it is lower than max_variance * variance_cut
+	double variance_cut = 0.05;
+	// -- generate n_tries resulting fields
+	size_t n_tries = 10;
+	
+	// 1. build correlations and variance
+	std::cout << "Computing spatial correlations" << std::endl;
+	PhysicalSpace ps(N, L);
+	FourierSpace fs = ps.fourier_space();
+
+	std::vector<double> phi11(N*N*N, 0.0);
+	std::vector<double> phi12(N*N*N, 0.0);
+	std::vector<double> phi22(N*N*N, 0.0);
+
+	for (int k=0; k<N; ++k)
+	for (int j=0; j<N; ++j)
+	for (int i=0; i<N; ++i){
+		phi11[fs.lin_index(i, j, k)] = Phi(1, 1, fs.coo[i], fs.coo[j], fs.coo[k]);
+		phi12[fs.lin_index(i, j, k)] = Phi(1, 2, fs.coo[i], fs.coo[j], fs.coo[k]);
+		phi22[fs.lin_index(i, j, k)] = Phi(2, 2, fs.coo[i], fs.coo[j], fs.coo[k]);
+	}
+	fs.tovtk("phi_11.vtk", phi11);
+	fs.tovtk("phi_12.vtk", phi12);
+	fs.tovtk("phi_22.vtk", phi22);
+	std::vector<double> r11 = inverse_fourier3(fs, phi11);
+	std::vector<double> r12 = inverse_fourier3(fs, phi12);
+	std::vector<double> r22 = inverse_fourier3(fs, phi22);
+	ps.tovtk("r_11.vtk", r11);
+	ps.tovtk("r_12.vtk", r12);
+	ps.tovtk("r_22.vtk", r22);
+
+	GridVariance2 var(ps,
+		std::move(r11),
+		std::move(r12),
+		std::move(r22));
+
+
+	// 2. Stochastic solver
+	PhysicalSpace velspace(N1, L1);
+	StochasticGaussian<2>::Params params;
+	params.eigen_cut = eigen_cut;
+	params.variance_cut = variance_cut;
+	StochasticGaussian<2> solver(velspace, var, params);
+
+	// 3. generate
+	for (size_t itry=0; itry<n_tries; ++itry){
+		std::array<std::vector<double>, 2> u = solver.generate(itry);
+		std::string fout = solver.dstr() + "_try" + std::to_string(itry) + ".vtk";
+		velspace.tovtk(fout, u[0], u[1], std::vector<double>(u[0].size(), 0));
+		std::cout << "Data saved into " << fout << std::endl;
+	}
+
+	std::cout << "DONE" << std::endl;
+}
+
 void gaussian3(){
 	// ==== PARAMETERS
 	// -- 1d partition and linear size of the discretized variance scalar field
@@ -157,5 +222,6 @@ void gaussian3(){
 
 int main(){
 	//gaussian1();
+	//gaussian2();
 	gaussian3();
 }
