@@ -51,13 +51,9 @@ private:
 	size_t _n_data = 0;
 };
 
-}
-
 // ================================= 1
 
-namespace {
-
-arma::SpMat<double> build_covariance_matrix(const IVarFun1& varfun, double cut_share, PhysicalSpace outspace){
+arma::SpMat<double> build_covariance_matrix(const IVarFun<1>& varfun, double cut_share, PhysicalSpace outspace){
 	arma::SpMat<double> ret(outspace.N3, outspace.N3);
 
 	double threshold = cut_share * varfun.max_value();
@@ -88,50 +84,9 @@ arma::SpMat<double> build_covariance_matrix(const IVarFun1& varfun, double cut_s
 	return ret;
 }
 
-}
-
-StochasticGaussian1::StochasticGaussian1(
-		PhysicalSpace space,
-		const IVarFun1& varfun,
-		Params params): _space(space), _params(params){
-	initialize(varfun);
-}
-
-void StochasticGaussian1::initialize(const IVarFun1& varfun){
-	std::cout << "Building covariance matrix" << std::endl;
-	arma::SpMat<double> cov = build_covariance_matrix(varfun, _params.variance_cut, _space);
-
-	std::cout << "Calculating eigen vectors" << std::endl;
-	arma::eigs_sym(eigval, eigvec, cov, _params.eigen_cut);
-	std::cout << eigval.n_elem << " eigen vectors calculated" << std::endl;
-	std::cout << "Eigen values range = [" << eigval(0) << ", " << eigval(eigval.n_elem-1) << "]" << std::endl;
-}
-
-std::vector<double> StochasticGaussian1::generate(size_t seed) const{
-	std::mt19937_64 generator;
-	generator.seed(seed);
-	size_t n_vals = eigval.n_elem;
-
-	arma::Col<double> random_normals(n_vals);
-	std::normal_distribution<double> ndist(0, 1);
-	for (size_t i=0; i<n_vals; ++i){
-		random_normals(i) = ndist(generator) * std::sqrt(eigval(i));
-	}
-	arma::Col<double> ret = eigvec * random_normals;
-	return std::vector<double>(ret.begin(), ret.end());
-}
-
-std::string StochasticGaussian1::dstr() const{
-	std::ostringstream oss;
-	oss << "sg1_L" << round(_space.L) << "_N" <<_space.N << "_eigcut" << _params.eigen_cut;
-	return oss.str();
-}
-
-
 // ================================= 3
 
-namespace {
-arma::SpMat<double> build_covariance_matrix(const IVarFun3& varfun, double cut_share, PhysicalSpace outspace){
+arma::SpMat<double> build_covariance_matrix(const IVarFun<3>& varfun, double cut_share, PhysicalSpace outspace){
 	double threshold = cut_share * varfun.max_value();
 	TmpSpMat tmp(3*outspace.N3, threshold);
 
@@ -197,79 +152,67 @@ arma::SpMat<double> build_covariance_matrix(const IVarFun3& varfun, double cut_s
 
 }
 
-
-StochasticGaussian3::StochasticGaussian3(
-		PhysicalSpace space,
-		const IVarFun3& varfun,
-		Params params): _space(space), _params(params){
-	initialize(varfun);
+template<size_t Dim>
+std::string StochasticGaussian<Dim>::dstr() const{
+	std::ostringstream oss;
+	oss << "sg" << std::to_string(Dim) << "_L" << round(_space.L) << "_N" <<_space.N << "_eigcut" << _params.eigen_cut;
+	return oss.str();
 }
 
-void StochasticGaussian3::initialize(const IVarFun3& varfun){
-	std::cout << "Building covariance matrix" << std::endl;
-	arma::SpMat<double> cov = build_covariance_matrix(varfun, _params.variance_cut, _space);
-
-	std::cout << "Calculating eigen vectors" << std::endl;
-	arma::eigs_sym(eigval, eigvec, cov, _params.eigen_cut);
-	
-	// check for positive values only
-	std::set<size_t> not_needed;
-	for (size_t i=0; i<eigval.n_elem; ++i){
-		if (eigval(i) < 0){
-			not_needed.insert(i);
-		}
-	}
-	if (not_needed.size() > 0){
-		std::cout << "WARNING: " << not_needed.size() << " eigen values are negative: ";
-		for (size_t i: not_needed) std::cout << eigval(i) << " ";
-		std::cout << std::endl;
-
-		arma::Mat<double> eigvec2 = arma::Mat<double>(eigvec.n_rows, eigvec.n_cols - not_needed.size());
-		arma::Col<double> eigval2 = arma::Col<double>(eigvec.n_cols - not_needed.size());
-
-		int kcol = 0;
-		for (size_t icol=0; icol < eigvec.n_cols; ++icol){
-			if (not_needed.find(icol) != not_needed.end()){
-				continue;
-			}
-			eigval2(kcol) = eigval(icol);
-			for (size_t irow=0; irow < eigvec.n_rows; ++irow){
-				eigvec2(irow, kcol) = eigvec(irow, icol);
-			}
-			++kcol;
-		}
-		std::swap(eigval2, eigval);
-		std::swap(eigvec2, eigvec);
-	}
-
-	std::cout << eigval.n_elem << " eigen vectors calculated." << std::endl;
-	std::cout << "Eigen values range = [" << eigval(0) << ", " << eigval(eigval.n_elem-1) << "]" << std::endl;
-}
-
-std::array<std::vector<double>, 3> StochasticGaussian3::generate(size_t seed) const{
+template<size_t Dim>
+std::array<std::vector<double>, Dim> StochasticGaussian<Dim>::generate(size_t seed) const{
 	std::mt19937_64 generator;
 	generator.seed(seed);
-	size_t n_vals = eigval.n_elem;
+	size_t n_vals = _eigval.n_elem;
 
 	arma::Col<double> random_normals(n_vals);
 	std::normal_distribution<double> ndist(0, 1);
 	for (size_t i=0; i<n_vals; ++i){
-		random_normals(i) = ndist(generator) * std::sqrt(eigval(i));
+		random_normals(i) = ndist(generator) * std::sqrt(_eigval(i));
 	}
-	arma::Col<double> raw = eigvec * random_normals;
+	arma::Col<double> raw = _eigvec * random_normals;
 
-	size_t n = _space.N3;
-	return {
-		std::vector<double>(raw.begin(), raw.begin()+n),
-		std::vector<double>(raw.begin()+n, raw.begin()+2*n),
-		std::vector<double>(raw.begin()+2*n, raw.end())
-	};
+	size_t n = space().N3;
+	size_t n_start = 0;
+	std::array<std::vector<double>, Dim> ret;
+	for (size_t d=0; d<Dim; ++d){
+		ret[d] = std::vector<double>(raw.begin()+n_start, raw.begin()+n_start+n);
+		n_start += n;
+	}
+	return ret;
 }
 
-std::string StochasticGaussian3::dstr() const{
-	std::ostringstream oss;
-	oss << "sg3_L" << round(_space.L) << "_N" <<_space.N << "_eigcut" << _params.eigen_cut;
-	return oss.str();
+template<size_t Dim>
+void StochasticGaussian<Dim>::initialize(const IVarFun<Dim>& varfun){
+	std::cout << "Building covariance matrix" << std::endl;
+	arma::SpMat<double> cov = build_covariance_matrix(varfun, params().variance_cut, space());
+
+	std::cout << "Calculating eigen vectors" << std::endl;
+	arma::eigs_sym(_eigval, _eigvec, cov, params().eigen_cut);
+	
+	// check for positive values only
+	std::vector<size_t> not_needed;
+	for (size_t i=0; i<_eigval.n_elem; ++i){
+		if (_eigval(i) < 0){
+			not_needed.push_back(i);
+		}
+	}
+	if (not_needed.size() > 0){
+		std::cout << "WARNING: " << not_needed.size() << " eigen values are negative: ";
+		for (size_t i: not_needed) std::cout << _eigval(i) << " ";
+		std::cout << std::endl;
+
+		arma::uvec nn(not_needed.size());
+		for (size_t i=0; i<not_needed.size(); ++i){
+			nn(i) = not_needed[i];
+		}
+		_eigvec.shed_cols(nn);
+		_eigval.shed_rows(nn);
+	}
+
+	std::cout << _eigval.n_elem << " eigen vectors calculated." << std::endl;
+	std::cout << "Eigen values range = [" << _eigval(0) << ", " << _eigval(_eigval.n_elem-1) << "]" << std::endl;
 }
 
-
+template class StochasticGaussian<1>;
+template class StochasticGaussian<3>;

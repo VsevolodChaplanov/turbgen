@@ -8,61 +8,32 @@
 #include "space.hpp"
 #include "varfun.hpp"
 
-class StochasticGaussian1{
+template<size_t Dim>
+class StochasticGaussian{
 public:
 	struct Params{
 		size_t eigen_cut = 1000;
 		double variance_cut = 0.05;
 	};
 
-	StochasticGaussian1(
+	StochasticGaussian(
 		PhysicalSpace space,
-		const IVarFun1& varfun,
-		Params params);
+		const IVarFun<Dim>& varfun,
+		Params params): _space(space), _params(params){ initialize(varfun); }
 
-	const PhysicalSpace& space() const;
-	std::vector<double> generate(size_t seed) const;
+	const PhysicalSpace& space() const { return _space; }
+	const Params& params() const { return _params; }
 
-	void save_state(std::string fn) const;
-	static StochasticGaussian1 load_state(std::string fn);
+	std::array<std::vector<double>, Dim> generate(size_t seed) const;
 
 	std::string dstr() const;
 private:
-	const PhysicalSpace _space;
-	const Params _params;
-	arma::Col<double> eigval;
-	arma::Mat<double> eigvec;
+	PhysicalSpace _space;
+	Params _params;
+	arma::Col<double> _eigval;
+	arma::Mat<double> _eigvec;
 
-	void initialize(const IVarFun1& varfun);
+	void initialize(const IVarFun<Dim>& varfun);
 };
-
-class StochasticGaussian3{
-public:
-	struct Params{
-		size_t eigen_cut = 1000;
-		double variance_cut = 0.05;
-	};
-
-	StochasticGaussian3(
-		PhysicalSpace space,
-		const IVarFun3& varfun,
-		Params params);
-
-	const PhysicalSpace& space() const;
-	std::array<std::vector<double>, 3> generate(size_t seed) const;
-
-	void save_state(std::string fn) const;
-	static StochasticGaussian1 load_state(std::string fn);
-
-	std::string dstr() const;
-private:
-	const PhysicalSpace _space;
-	const Params _params;
-	arma::Col<double> eigval;
-	arma::Mat<double> eigvec;
-
-	void initialize(const IVarFun3& varfun);
-};
-
 
 #endif

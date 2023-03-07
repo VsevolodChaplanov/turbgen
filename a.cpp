@@ -56,14 +56,14 @@ void gaussian1(){
 	size_t N1 = 31;
 	double L1 = 20;
 	PhysicalSpace velspace(N1, L1);
-	StochasticGaussian1::Params params;
+	StochasticGaussian<1>::Params params;
 	params.eigen_cut = 100;
 	params.variance_cut = 0.05;
-	StochasticGaussian1 solver(velspace, var, params);
+	StochasticGaussian<1> solver(velspace, var, params);
 
 	// 3. generate
 	for (size_t itry=0; itry<10; ++itry){
-		arma::Col<double> u = solver.generate(itry);
+		std::vector<double> u = solver.generate(itry)[0];
 		std::string fout = solver.dstr() + "_try" + std::to_string(itry) + ".vtk";
 		velspace.tovtk(fout, u.begin(), u.end());
 		std::cout << "Data saved into " << fout << std::endl;
@@ -139,10 +139,10 @@ void gaussian3(){
 
 	// 2. Stochastic solver
 	PhysicalSpace velspace(N1, L1);
-	StochasticGaussian3::Params params;
+	StochasticGaussian<3>::Params params;
 	params.eigen_cut = eigen_cut;
 	params.variance_cut = variance_cut;
-	StochasticGaussian3 solver(velspace, var, params);
+	StochasticGaussian<3> solver(velspace, var, params);
 
 	// 3. generate
 	for (size_t itry=0; itry<n_tries; ++itry){
