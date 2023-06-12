@@ -124,9 +124,9 @@ void Space::interpolation_polynom(const point_t& p, std::array<size_t, 8>& indic
 	double ky = (p[1] - coo[0])/h;
 	double kz = (p[2] - coo[0])/h;
 
-	size_t i = int(std::floor(kx));
-	size_t j = int(std::floor(ky));
-	size_t k = int(std::floor(kz));
+	size_t i = std::max(0, std::min((int)N-2, int(std::floor(kx))));
+	size_t j = std::max(0, std::min((int)N-2, int(std::floor(ky))));
+	size_t k = std::max(0, std::min((int)N-2, int(std::floor(kz))));
 
 	double xi = kx - i;
 	double eta = ky - j;

@@ -6,6 +6,7 @@
 #include "ft.hpp"
 #include <random>
 #include "stochastic_gaussian.hpp"
+#include "sequential_gaussian_1.hpp"
 
 // Given energy spectrum
 double E(double kappa){
@@ -220,8 +221,115 @@ void gaussian3(){
 	std::cout << "DONE" << std::endl;
 }
 
+
+void gaussian_sequential1(){
+	// ==== PARAMETERS
+	// -- 1d partition and linear size of the discretized variance scalar field
+	size_t N = 51;
+	double L = 20;
+	// -- 1d partition and linear size of the resulting velocity vector field
+	size_t N1 = 31;
+	double L1 = 10;
+	// -- maximum number of adjacent points to be used in kriging solver
+	size_t n_adjacent_points = 100;
+	// -- generate n_tries resulting fields
+	size_t n_tries = 1;
+	
+	// 1. build correlations and variance
+	std::cout << "Computing spatial correlations" << std::endl;
+	PhysicalSpace ps(N, L);
+	FourierSpace fs = ps.fourier_space();
+
+	std::vector<double> phi11(N*N*N, 0.0);
+
+	for (int k=0; k<N; ++k)
+	for (int j=0; j<N; ++j)
+	for (int i=0; i<N; ++i){
+		phi11[fs.lin_index(i, j, k)] = Phi(1, 1, fs.coo[i], fs.coo[j], fs.coo[k]);
+	}
+	fs.tovtk("phi_11.vtk", phi11);
+	std::vector<double> r11 = inverse_fourier3(fs, phi11);
+	ps.tovtk("r_11.vtk", r11);
+
+	GridVariance1 var(ps,
+		std::move(r11));
+
+
+	SequentialGaussian<1>::Params params;
+	params.n_adjacent_points = n_adjacent_points;
+	PhysicalSpace velspace(N1, L1);
+	for (size_t itry=0; itry<n_tries; ++itry){
+		SequentialGaussian<1> solver(velspace, var, params);
+		std::array<std::vector<double>, 1> u = solver.generate(itry, true);
+		std::string fout = solver.dstr() + "_try" + std::to_string(itry) + ".vtk";
+		velspace.tovtk(fout, u[0], std::vector<double>(u[0].size(), 0));
+		std::cout << "Data saved into " << fout << std::endl;
+	}
+	std::cout << "DONE" << std::endl;
+}
+
+void gaussian_sequential2(){
+	// ==== PARAMETERS
+	// -- 1d partition and linear size of the discretized variance scalar field
+	size_t N = 51;
+	double L = 20;
+	// -- 1d partition and linear size of the resulting velocity vector field
+	size_t N1 = 51;
+	double L1 = 10;
+	// -- maximum number of adjacent points to be used in kriging solver
+	size_t n_adjacent_points = 100;
+	// -- generate n_tries resulting fields
+	size_t n_tries = 1;
+	
+	// 1. build correlations and variance
+	std::cout << "Computing spatial correlations" << std::endl;
+	PhysicalSpace ps(N, L);
+	FourierSpace fs = ps.fourier_space();
+
+	std::vector<double> phi11(N*N*N, 0.0);
+	std::vector<double> phi12(N*N*N, 0.0);
+	std::vector<double> phi22(N*N*N, 0.0);
+
+	for (int k=0; k<N; ++k)
+	for (int j=0; j<N; ++j)
+	for (int i=0; i<N; ++i){
+		phi11[fs.lin_index(i, j, k)] = Phi(1, 1, fs.coo[i], fs.coo[j], fs.coo[k]);
+		phi12[fs.lin_index(i, j, k)] = Phi(1, 2, fs.coo[i], fs.coo[j], fs.coo[k]);
+		phi22[fs.lin_index(i, j, k)] = Phi(2, 2, fs.coo[i], fs.coo[j], fs.coo[k]);
+	}
+	fs.tovtk("phi_11.vtk", phi11);
+	fs.tovtk("phi_12.vtk", phi12);
+	fs.tovtk("phi_22.vtk", phi22);
+	std::vector<double> r11 = inverse_fourier3(fs, phi11);
+	std::vector<double> r12 = inverse_fourier3(fs, phi12);
+	std::vector<double> r22 = inverse_fourier3(fs, phi22);
+	ps.tovtk("r_11.vtk", r11);
+	ps.tovtk("r_12.vtk", r12);
+	ps.tovtk("r_22.vtk", r22);
+
+	GridVariance2 var(ps,
+		std::move(r11),
+		std::move(r12),
+		std::move(r22));
+
+
+	SequentialGaussian<2>::Params params;
+	params.n_adjacent_points = n_adjacent_points;
+	PhysicalSpace velspace(N1, L1);
+	for (size_t itry=0; itry<n_tries; ++itry){
+		SequentialGaussian<2> solver(velspace, var, params);
+		std::array<std::vector<double>, 2> u = solver.generate(itry, true);
+		std::string fout = solver.dstr() + "_try" + std::to_string(itry) + ".vtk";
+		velspace.tovtk(fout, u[0], u[1], std::vector<double>(u[0].size(), 0));
+		std::cout << "Data saved into " << fout << std::endl;
+	}
+	std::cout << "DONE" << std::endl;
+}
+
 int main(){
 	//gaussian1();
 	//gaussian2();
-	gaussian3();
+	//gaussian3();
+	//gaussian_sequential1();
+	gaussian_sequential2();
 }

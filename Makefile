@@ -2,7 +2,8 @@ FILELIST= a.cpp \
 	ft.cpp \
 	space.cpp \
 	stochastic_gaussian.cpp \
-	varfun.cpp
+	varfun.cpp \
+	sequential_gaussian_1.cpp \
 
 all: $(FILELIST)
 	g++ -O3 -o a $(FILELIST) -std=c++17 -lfftw3 -lm -larmadillo
