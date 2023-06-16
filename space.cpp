@@ -164,6 +164,11 @@ std::array<size_t, 3> Space::tri_index(size_t ind) const{
 	return {i, j, k};
 }
 
+void Space::tovtk_init_data(std::ostream& ofs, std::string data_name, int data_dim) const{
+	ofs << "SCALARS " << data_name << " double " << data_dim << std::endl;
+	ofs << "LOOKUP_TABLE default" << std::endl;
+}
+
 void Space::tovtk_init(std::ostream& ofs, int data_dim) const {
 	double h = L/N;
 
@@ -185,6 +190,8 @@ void Space::tovtk_init(std::ostream& ofs, int data_dim) const {
 		ofs << coo[i] << std::endl;
 	}
 	ofs << "POINT_DATA " << N*N*N << std::endl;
-	ofs << "SCALARS data double " << data_dim << std::endl;
-	ofs << "LOOKUP_TABLE default" << std::endl;
+
+	if (data_dim > 0){
+		tovtk_init_data(ofs, "data", data_dim);
+	}
 }

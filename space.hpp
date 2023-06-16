@@ -45,6 +45,20 @@ struct Space{
 		return tovtk(fn, f.begin(), f.end());
 	}
 
+	void tovtk(std::string fn, const std::vector<std::string>& data_fieldnames,
+	           const std::vector<const std::vector<double>*>& data_fields) const{
+		std::ofstream fs(fn);
+		tovtk_init(fs, -1);
+		for (size_t i=0; i<data_fieldnames.size(); ++i){
+			tovtk_init_data(fs, data_fieldnames[i], 1);
+			auto begin = data_fields[i]->begin();
+			auto end = data_fields[i]->end();
+			for (auto it=begin; it != end; ++it){
+				fs << *it << std::endl;
+			}
+		}
+	}
+
 	template<typename DataIter>
 	void tovtk(std::string fn, DataIter begin, DataIter end) const{
 		std::ofstream fs(fn);
@@ -96,6 +110,7 @@ struct Space{
 	}
 private:
 	void tovtk_init(std::ostream& fs, int datadim=1) const;
+	void tovtk_init_data(std::ostream& ofs, std::string data_name, int data_dim) const;
 	double use_interpolation_polynom(const std::array<size_t, 8>& indices, const std::array<double, 8>& bases, const std::vector<double>& v) const;
 	void interpolation_polynom(const point_t& p, std::array<size_t, 8>& indices, std::array<double, 8>& bases) const;
 };
